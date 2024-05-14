@@ -1,0 +1,137 @@
+Supported Properties in JSCH
+Host: Yes, you can set the hostname using the Session object.
+
+java
+Copy code
+JSch jsch = new JSch();
+Session session = jsch.getSession("user", "sftp.example.com", 22);
+Port: Yes, specified when creating a session.
+
+java
+Copy code
+Session session = jsch.getSession("user", "sftp.example.com", 22);
+Username: Yes, specified when creating a session.
+
+java
+Copy code
+Session session = jsch.getSession("user", "sftp.example.com", 22);
+Password: Yes, using the setPassword method.
+
+java
+Copy code
+session.setPassword("password");
+PrivateKey: Yes, using the addIdentity method.
+
+java
+Copy code
+jsch.addIdentity("/path/to/private/key", "passphrase");
+Passphrase: Yes, when adding an identity.
+
+java
+Copy code
+jsch.addIdentity("/path/to/private/key", "passphrase");
+Timeout: Yes, using the setTimeout method.
+
+java
+Copy code
+session.setTimeout(30000); // 30 seconds
+KeepAliveInterval: No direct support, but can be managed with custom implementation.
+
+AuthType: Implicitly supported through password or key-based authentication methods.
+
+KnownHostsFile: Yes, using the setKnownHosts method.
+
+java
+Copy code
+jsch.setKnownHosts("/path/to/known_hosts");
+LocalDirectory: Managed manually in the code.
+
+RemoteDirectory: Managed manually in the code.
+
+FileMode: Managed manually in the code, not directly supported by JSCH.
+
+TransferMode: Managed manually in the code, not directly supported by JSCH.
+
+ChunkSize: Not directly supported, managed manually during file transfer.
+
+Retries: Not directly supported, managed manually with retry logic.
+
+LogFile: Not directly supported, logging must be implemented separately.
+
+LogLevel: Not directly supported, logging must be implemented separately.
+
+EnableDebugging: Partial support with logging levels, but detailed logging needs custom implementation.
+
+Compression: Yes, using setConfig method.
+
+java
+Copy code
+session.setConfig("compression.s2c", "zlib,none");
+session.setConfig("compression.c2s", "zlib,none");
+MaxConcurrentTransfers: Not directly supported, managed manually.
+
+BufferSize: Not directly supported, managed manually.
+
+StrictHostKeyChecking: Yes, using setConfig method.
+
+java
+Copy code
+session.setConfig("StrictHostKeyChecking", "yes");
+CipherAlgorithms: Yes, using setConfig method.
+
+java
+Copy code
+session.setConfig("cipher.s2c", "aes256-ctr,aes192-ctr,aes128-ctr");
+session.setConfig("cipher.c2s", "aes256-ctr,aes192-ctr,aes128-ctr");
+MACAlgorithms: Yes, using setConfig method.
+
+java
+Copy code
+session.setConfig("mac.s2c", "hmac-sha2-256,hmac-sha2-512");
+session.setConfig("mac.c2s", "hmac-sha2-256,hmac-sha2-512");
+ProxyType, ProxyHost, ProxyPort, ProxyUser, ProxyPassword: Partial support through Proxy class.
+
+java
+Copy code
+ProxySOCKS5 proxy = new ProxySOCKS5("proxy.example.com", 1080);
+proxy.setUserPasswd("proxyuser", "proxypass");
+session.setProxy(proxy);
+ServerAliveInterval: No direct support, but can be managed with custom implementation.
+
+ServerAliveCountMax: No direct support, but can be managed with custom implementation.
+
+ForwardAgent: Partial support, but typically requires additional setup.
+
+HostKeyAlgorithms: Yes, using setConfig method.
+
+java
+Copy code
+session.setConfig("server_host_key", "ssh-rsa,ssh-dss");
+Example Configuration with JSCH
+Here’s an example of how you might configure a session with JSCH using some of the properties mentioned:
+
+java
+Copy code
+JSch jsch = new JSch();
+jsch.setKnownHosts("/path/to/known_hosts");
+jsch.addIdentity("/path/to/private/key", "passphrase");
+
+Session session = jsch.getSession("user", "sftp.example.com", 22);
+session.setPassword("password");
+
+session.setTimeout(30000); // 30 seconds
+
+java.util.Properties config = new java.util.Properties();
+config.put("StrictHostKeyChecking", "yes");
+config.put("compression.s2c", "zlib,none");
+config.put("compression.c2s", "zlib,none");
+config.put("cipher.s2c", "aes256-ctr,aes192-ctr,aes128-ctr");
+config.put("cipher.c2s", "aes256-ctr,aes192-ctr,aes128-ctr");
+config.put("mac.s2c", "hmac-sha2-256,hmac-sha2-512");
+config.put("mac.c2s", "hmac-sha2-256,hmac-sha2-512");
+config.put("server_host_key", "ssh-rsa,ssh-dss");
+
+session.setConfig(config);
+
+session.connect();
+JSCH provides a good amount of configurability, but some of the advanced properties and functionalities may require additional manual implementation or the use of other libraries in conjunction.
