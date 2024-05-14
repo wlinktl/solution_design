@@ -1,0 +1,42 @@
+Connection Properties
+Host: The hostname or IP address of the SFTP server.
+Port: The port number to connect to (default is 22).
+Username: The username for authentication.
+Password: The password for authentication (if not using key-based authentication).
+PrivateKey: Path to the private key file for key-based authentication.
+Passphrase: Passphrase for the private key (if applicable).
+Timeout: Connection timeout in seconds.
+KeepAliveInterval: Interval in seconds to send keepalive messages to the server.
+Authentication Properties
+AuthType: Type of authentication (e.g., password, publickey).
+KnownHostsFile: Path to the known hosts file for host key verification.
+File Transfer Properties
+LocalDirectory: Path to the local directory for file uploads/downloads.
+RemoteDirectory: Path to the remote directory for file uploads/downloads.
+FileMode: Permissions for uploaded files.
+TransferMode: Transfer mode (e.g., binary, ASCII).
+ChunkSize: Size of chunks for file transfers.
+Retries: Number of retry attempts for failed transfers.
+Logging and Debugging
+LogFile: Path to the log file.
+LogLevel: Logging level (e.g., DEBUG, INFO, WARN, ERROR).
+EnableDebugging: Flag to enable/disable debugging.
+Performance and Optimization
+Compression: Enable/disable compression.
+MaxConcurrentTransfers: Maximum number of concurrent file transfers.
+BufferSize: Buffer size for reading/writing files.
+Security Properties
+StrictHostKeyChecking: Flag to enable/disable strict host key checking.
+CipherAlgorithms: List of preferred cipher algorithms.
+MACAlgorithms: List of preferred MAC (Message Authentication Code) algorithms.
+Proxy Settings
+ProxyType: Type of proxy (e.g., HTTP, SOCKS5).
+ProxyHost: Proxy server hostname or IP address.
+ProxyPort: Proxy server port.
+ProxyUser: Username for proxy authentication.
+ProxyPassword: Password for proxy authentication.
+Advanced Properties
+ServerAliveInterval: Interval in seconds to send server alive messages.
+ServerAliveCountMax: Maximum number of server alive messages to send before disconnecting.
+ForwardAgent: Flag to enable/disable agent forwarding.
+HostKeyAlgorithms: List of preferred host key algorithms.
