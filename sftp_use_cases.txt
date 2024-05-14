@@ -1,0 +1,29 @@
+sftp use cases:
+
+Poll File
+Polling refers to the process where the client repeatedly checks (polls) the server for the existence of a file at regular intervals. This method is often used when the client needs to retrieve files from the server as soon as they become available.
+
+Client-Initiated: The client initiates the connection and repeatedly queries the server.
+Use Case: Useful in scenarios where files are generated or uploaded to the server at unpredictable times, and the client needs to process them as soon as they are available.
+Mechanism:
+The client connects to the server.
+It checks if the specific file or set of files exists.
+If the file is found, the client downloads it.
+This process is repeated at regular intervals.
+Push File
+Pushing refers to the process where the server or another client sends (pushes) files to the target client. In this scenario, the target client does not need to repeatedly check for the file; instead, it receives the file as soon as it is sent by the source.
+
+Server/Source-Initiated: The server or source initiates the file transfer.
+Use Case: Useful when files are ready to be transferred at known times or events, ensuring that the target client receives the files immediately without delay.
+Mechanism:
+The server or another client establishes a connection to the target client.
+The file is transferred directly to the target client.
+The target client receives and processes the file upon arrival.
+Key Differences
+Initiation: Polling is initiated by the client, while pushing is initiated by the server or another client.
+Timing: Polling involves regular intervals and may introduce latency in file availability detection, whereas pushing allows for immediate transfer as soon as the file is ready.
+Efficiency: Polling can be less efficient due to repeated checking, whereas pushing is more efficient as it avoids unnecessary checks and transfers the file immediately.
+Example Scenarios
+Poll File: A backup system checks a remote server every hour to see if new log files have been generated for download and analysis.
+Push File: A sensor network sends data files directly to a central server as soon as they are created, ensuring real-time data processing.
+Both methods have their advantages and can be chosen based on the specific requirements of the file transfer process.
