@@ -1,0 +1,87 @@
+Local sftp server setup on Windows 10
+
+Option 1: use Windows 10 built-in OpenSSH Server
+Option 2: download Core FTP Server https://www.coreftp.com/server/
+
+Setting up an SFTP (SSH File Transfer Protocol) server on Windows 10 involves using the OpenSSH server, which is built into Windows 10. Here’s a step-by-step guide to get your SFTP server up and running:
+
+### Step 1: Enable OpenSSH Server
+1. **Open Settings:**
+   - Go to `Settings` > `Apps` > `Optional Features`.
+
+2. **Add a Feature:**
+   - Click on `Add a feature`.
+
+3. **Install OpenSSH Server:**
+   - Scroll down and select `OpenSSH Server`, then click `Install`.
+
+### Step 2: Start and Configure the OpenSSH Server
+1. **Open Services:**
+   - Press `Win + R`, type `services.msc`, and press `Enter`.
+
+2. **Find OpenSSH SSH Server:**
+   - In the Services window, scroll down to find `OpenSSH SSH Server`.
+
+3. **Start the Service:**
+   - Right-click on `OpenSSH SSH Server` and select `Start`. 
+   - To ensure it starts automatically in the future, right-click, select `Properties`, and set the `Startup type` to `Automatic`.
+
+### Step 3: Configure the SFTP Server
+1. **Open PowerShell as Administrator:**
+   - Press `Win + X`, then select `Windows PowerShell (Admin)`.
+
+2. **Edit the SSH Configuration File:**
+   - Navigate to the OpenSSH configuration directory:
+     ```shell
+     cd C:\ProgramData\ssh
+     ```
+   - Open the `sshd_config` file in a text editor like Notepad:
+     ```shell
+     notepad sshd_config
+     ```
+
+3. **Modify Configuration:**
+   - Ensure the following lines are present and uncomment them (remove `#` if present):
+     ```plaintext
+     Subsystem   sftp    sftp-server.exe
+     ```
+   - Save and close the file.
+
+### Step 4: Allow SSH in Windows Firewall
+1. **Open Windows Firewall:**
+   - Press `Win + R`, type `control`, and press `Enter`. Go to `System and Security` > `Windows Defender Firewall`.
+
+2. **Allow an App Through Firewall:**
+   - Click on `Allow an app or feature through Windows Defender Firewall`.
+
+3. **Enable OpenSSH:**
+   - Ensure `OpenSSH Server` is checked for both private and public networks.
+
+### Step 5: Create a User for SFTP
+1. **Create a New User:**
+   - Open PowerShell as Administrator and create a new user:
+     ```shell
+     net user sftpuser Password123 /add
+     ```
+   - Replace `sftpuser` with your desired username and `Password123` with a secure password.
+
+2. **Set the User’s Home Directory:**
+   - Change the home directory for the SFTP user (optional but recommended):
+     ```shell
+     mkdir C:\sftpusers\sftpuser
+     New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name "DefaultShell" -Value "C:\Windows\System32\cmd.exe"
+     ```
+
+### Step 6: Restart the SSH Service
+1. **Restart the SSH Service:**
+   - Open PowerShell as Administrator and run:
+     ```shell
+     Restart-Service sshd
+     ```
+
+### Step 7: Connect to the SFTP Server
+1. **Use an SFTP Client:**
+   - Use an SFTP client like FileZilla or WinSCP.
+   - Connect to your server using the hostname (or IP address) of your Windows machine, port 22, and the credentials of the user you created.
+
+By following these steps, you should have a fully functional SFTP server running on your Windows 10 machine. If you encounter any issues or need further customization, feel free to ask!
