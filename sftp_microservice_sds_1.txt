@@ -1,0 +1,110 @@
+Here is a polished version of your requirements and design note, formatted as a simple Software Development Specification (SDS):
+
+---
+
+# Software Development Specification (SDS)
+
+## SFTP Microservice
+
+### Introduction
+This document outlines the requirements and design for developing a microservice that enables secure file transfer with PGP encryption. The microservice will be developed using Java and Spring Boot, leveraging tools such as JSch for SFTP and Bouncy Castle for PGP encryption/decryption.
+
+### Objectives
+- Develop a microservice for secure file transfer.
+- Implement PGP encryption and decryption for file content.
+- Integrate secure FTP transmission.
+- Automate file transfer with a scheduled job.
+- Ensure proper logging throughout the process.
+
+### Technical Specifications
+
+#### 1. Technology Stack
+- **Programming Language**: Java 11
+- **Framework**: Spring Boot 2.7
+- **Scheduling**: Spring Scheduler
+- **SFTP Library**: JSch
+- **PGP Encryption/Decryption**: Bouncy Castle
+- **Logging**: Logback
+
+#### 2. Functional Requirements
+
+##### Application Process
+1. **Startup**
+   - Initialize the Spring Boot application.
+
+2. **Load Configuration**
+   - Load schedules and other necessary configurations from a configuration file.
+
+3. **Run Cron Job**
+   - Schedule a job to execute the SFTP process every 5 minutes using Spring Scheduler.
+
+4. **Connect to SFTP Server**
+   - Use SSH private key for authentication.
+   - Load SFTP configuration and private key from configuration file.
+   - Establish a connection to the SFTP server.
+
+5. **File Handling**
+   - Retrieve files from the SFTP server and save them to a specific directory.
+   - Load the directory path from the configuration file.
+
+6. **Decrypt File**
+   - Decrypt the retrieved file using Bouncy Castle.
+
+##### Message Security Process
+1. **Signing**
+   - Sign the message using the sender's private key.
+
+2. **Encrypting**
+   - Encrypt the signed message using the recipient's public key.
+
+3. **Decrypting**
+   - Decrypt the encrypted message using the recipient's private key.
+
+4. **Verifying**
+   - Verify the signature using the sender's public key to ensure the integrity and authenticity of the message.
+
+### Non-Functional Requirements
+
+#### Security
+- Ensure all data transmissions are secure.
+- Use PGP for encrypting sensitive data.
+- Implement proper authentication and authorization mechanisms.
+
+#### Performance
+- Ensure the microservice can handle multiple concurrent file transfers efficiently.
+- Optimize for low latency and high throughput in file transfers.
+
+#### Scalability
+- Design the microservice to be easily scalable to handle increasing load.
+- Ensure components can be distributed across multiple instances as needed.
+
+### Development and Testing
+
+#### Development
+- Use **Java 11** and **Spring Boot 2.7** for development.
+- Follow best practices for code quality, including proper documentation and unit testing.
+
+#### Testing
+- Perform thorough testing including unit, integration, and system testing.
+- Test for various scenarios including successful file transfers, failed transfers, and security breaches.
+
+### Deployment
+- Deploy the microservice in a containerized environment using Docker.
+- Use Kubernetes for orchestration and management of microservice instances.
+
+### Logging
+- Use **Logback** for logging.
+- Write log messages for each step in the process to ensure traceability and easier debugging.
+
+### Appendix
+
+#### References
+- `PGPCryptoExample.java`: Example code for PGP encryption and decryption.
+- JSch Documentation: [JSch](http://www.jcraft.com/jsch/)
+- Bouncy Castle Documentation: [Bouncy Castle](https://www.bouncycastle.org/documentation.html)
+- Spring Boot Documentation: [Spring Boot](https://spring.io/projects/spring-boot)
+- Logback Documentation: [Logback](https://logback.qos.ch/documentation.html)
+
+---
+
+This specification provides a clear, structured, and comprehensive overview of the requirements and design considerations for the SFTP microservice, ensuring that all critical aspects of development and implementation are covered.
