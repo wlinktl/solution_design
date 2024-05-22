@@ -1,0 +1,14 @@
+Sftp Service Unit Test
+
+Setup:
+
+We use MockitoExtension to enable Mockito annotations.
+ReflectionTestUtils is used to inject configuration properties into the SFTPPGPService.
+Mocking:
+
+Mock JSch, Session, and ChannelSftp to simulate SFTP operations.
+Mock PGP decryption method from PGPCryptoExample.
+Tests:
+
+testExecuteSFTPJob: Verifies that the SFTP job connects to the server, lists files, retrieves a file, and disconnects properly.
+testDecryptFile: Ensures the decryption method reads the encrypted file, decrypts it using mocked PGP methods, and writes the decrypted file.

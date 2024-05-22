@@ -1,0 +1,20 @@
+sftp-microservice/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   ├── com/
+│   │   │   │   ├── example/
+│   │   │   │   │   ├── sftp/
+│   │   │   │   │   │   ├── config/
+│   │   │   │   │   │   ├── service/
+│   │   │   │   │   │   ├── model/
+│   │   │   │   │   │   ├── SftpMicroserviceApplication.java
+│   │   ├── resources/
+│   │   │   ├── application.properties
+│   └── test/
+│       └── java/
+│           └── com/
+│               └── example/
+│                   └── sftp/
+│                       └── SftpMicroserviceApplicationTests.java
+└── pom.xml

@@ -1,0 +1,6 @@
+Sftp Service Unit Test
+
+
+SftpConfigTest.java: Tests the creation of the ChannelSftp bean by verifying that it's not null.
+SftpServiceTest.java: Tests the downloadAndDecryptFiles method of the SftpService class. This includes mocking the SFTP channel's behavior and verifying that a file is downloaded and decrypted.
+SftpMicroserviceApplicationTests.java: Ensures that the Spring Boot application context loads without any issues.
