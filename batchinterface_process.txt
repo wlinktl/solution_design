@@ -20,3 +20,46 @@ batch interface (sftp client) process
 | 8. Upload/Download Files    | ----> | 9. File Received/Stored     |
 |                             |       |                             |
 +-----------------------------+       +-----------------------------+
+
+
+
+The step where the user connects to the TIBCO Mailbox server using SFTP typically includes two parts:
+
+Server Authentication using Host Key: The client verifies the identity of the TIBCO Mailbox server using the server's host key.
+User Authentication using Private Key: The user authenticates to the TIBCO Mailbox server using their private SSH key.
+Detailed Explanation
+1. Server Authentication using Host Key
+When the client initiates an SFTP connection to the TIBCO Mailbox server, the server presents its host key. The client then checks this host key against its known_hosts file to ensure that it is connecting to the correct server and not an imposter. This step is crucial for preventing man-in-the-middle attacks.
+
+Process:
+The client initiates a connection to the server.
+The server sends its host key to the client.
+The client checks the host key against its ~/.ssh/known_hosts file.
+If the host key is recognized and trusted, the connection proceeds. If not, the client may prompt the user to confirm the authenticity of the host key.
+2. User Authentication using Private Key
+After the server is authenticated, the client proceeds to authenticate the user. This is done using the user's private SSH key. The server checks the user's public key, which should be previously added to the ~/.ssh/authorized_keys file on the server.
+
+Process:
+The client uses its private key to sign a message.
+The server verifies this signature using the corresponding public key stored in the ~/.ssh/authorized_keys file for the user account.
+If the signature is verified successfully, the user is authenticated and granted access.
+
+
+Summary of Steps
+Server Authentication:
+
+The client connects to the TIBCO Mailbox server.
+The server presents its host key.
+The client checks this host key against its known_hosts file.
+If the host key is trusted, the connection proceeds.
+User Authentication:
+
+The client uses its private key to authenticate.
+The server verifies the client's authentication using the corresponding public key stored in the authorized_keys file.
+Upon successful authentication, the user is granted access.
+File Transfer:
+
+The user can upload or download files to/from the TIBCO Mailbox server.
+Summary
+Server Authentication using Host Key: Ensures the client is connecting to the legitimate TIBCO Mailbox server.
+User Authentication using Private Key: Authenticates the user securely to the TIBCO Mailbox server.
