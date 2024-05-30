@@ -1,0 +1,22 @@
+batch interface (sftp client) process
+
++-----------------------------+       +-----------------------------+
+|      client system          |       |        TIBCO Mailbox        |
+| (Client: Linux Server)      |       |        (Host Server)        |
+|                             |       |                             |
+| 1. Connect using SFTP       |       |                             |
+|                             |       |                             |
+| 2. Server Authentication    |       |                             |
+|    using Host Key           | ----> | 3. Send Host Key            |
+|    - Check known_hosts      | <---- | 4. Verify Host Key          |
+|                             |       |                             |
+| 5. User Authentication      |       |                             |
+|    using Private Key        | ----> | 6. Verify User's Public Key |
+|    - Sign Message with      |       |    in authorized_keys       |
+|      Private Key            |       |                             |
+|                             |       |                             |
+| 7. Authentication Success   |       |                             |
+|                             |       |                             |
+| 8. Upload/Download Files    | ----> | 9. File Received/Stored     |
+|                             |       |                             |
++-----------------------------+       +-----------------------------+
