@@ -1,0 +1,10 @@
+When you run a Java application that connects to the TIBCO Mailbox server using SSH, you still need to handle SSH authentication to ensure secure communication between your application and the TIBCO Mailbox server. This typically involves verifying the server's host key to prevent man-in-the-middle attacks and using an appropriate authentication method (e.g., public key authentication) for the client.
+
+Why Host Key Verification is Important
+Security: Verifying the server's host key ensures that your Java application is connecting to the legitimate TIBCO Mailbox server and not an imposter. This prevents man-in-the-middle attacks where an attacker could intercept and potentially alter the data being transferred.
+Trust: By storing and verifying the server's host key, your application can trust the server it is connecting to, ensuring the integrity of the connection.
+Steps for SSH Authentication in Java with JSch
+Here are the typical steps for setting up SSH authentication in a Java application using the JSch library:
+
+Server Authentication using Host Key: Verify the server's host key against the known hosts stored in your application or system.
+User Authentication: Authenticate the client using public key authentication or another method (e.g., password).
