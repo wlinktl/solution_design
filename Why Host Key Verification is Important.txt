@@ -8,3 +8,11 @@ Here are the typical steps for setting up SSH authentication in a Java applicati
 
 Server Authentication using Host Key: Verify the server's host key against the known hosts stored in your application or system.
 User Authentication: Authenticate the client using public key authentication or another method (e.g., password).
+
+
+The primary purpose of host key verification is to ensure that the client is connecting to the intended server and not to an imposter. This prevents man-in-the-middle attacks, where an attacker might intercept and alter the communication between the client and the server.
+
+Summary
+Client Responsibility: The client is responsible for verifying the server’s host key to ensure it is connecting to the correct server. This is done by checking the server's presented host key against the known host keys stored in the client's HostKeyRepository.
+Security: Adding the server's host key to the client's repository (jsch.getHostKeyRepository().add(hostKey, null);) is crucial for preventing man-in-the-middle attacks and ensuring secure communication.
+Configuration: Setting StrictHostKeyChecking to yes enhances security by ensuring that the client only connects to servers whose keys are explicitly trusted.
