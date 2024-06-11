@@ -1,0 +1,27 @@
+Summary
+Efficiency Comparison:
+
+Kafka Streams with Built-In State Store:
+Pros: Tight integration, low latency, high performance, automatic retention and cleanup, horizontal scalability.
+Cons: Limited by local storage, potential for increased resource consumption on the host machine.
+External Database (MySQL):
+Pros: Centralized storage, potentially easier to manage and scale independently of the Kafka Streams application.
+Cons: Higher latency due to network round-trips, increased operational overhead for retention and cleanup logic, potential scalability challenges.
+
+
+Using a deduplication proxy or gateway, or Kafka Streams with intermediate topics for deduplication, ensures that messages inside Kafka are deduplicated. This approach prevents duplicate messages from being produced to Kafka in the first place, making it unnecessary for consumers to perform deduplication again.
+
+Advantages:
+
+Efficiency: Prevents duplication at the source, reducing the need for multiple consumers to perform deduplication.
+Resource Savings: Saves computational resources by eliminating duplicate processing.
+Simplified Consumer Logic: Consumers can process messages directly without worrying about deduplication.
+Implementing a Deduplication Proxy:
+
+Introduce a proxy service that deduplicates messages before forwarding them to Kafka.
+Use Redis for fast deduplication checks.
+Using Kafka Streams:
+
+Utilize Kafka Streams to perform real-time deduplication and write to a deduplicated topic.
+Configure retention policies to manage state size.
+These approaches ensure that only unique messages are stored in Kafka, improving overall system efficiency and reducing redundant processing.
