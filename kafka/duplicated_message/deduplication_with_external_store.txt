@@ -1,0 +1,122 @@
+You are correct that in an active-passive Kafka cluster architecture, there is always some delay between the active and passive clusters. This delay can result in the state and offsets not being perfectly synchronized between the two clusters. Consequently, if using internal RocksDB and changelog topics, there is a risk that deduplication may not be 100% accurate due to potential data and offset discrepancies during failover.
+
+### Addressing Deduplication Challenges in Active-Passive Architecture
+
+To mitigate the impact of these synchronization delays, you can enhance your deduplication strategy by using a combination of Kafka Streams with an external state store. This hybrid approach leverages the benefits of Kafka Streams' stateful processing while ensuring robust deduplication through an external system that is less affected by Kafka cluster synchronization issues.
+
+### Hybrid Deduplication Approach Using External State Store
+
+#### Overview
+
+- **Kafka Streams**: Handles the core stream processing logic.
+- **External State Store**: Manages the deduplication state independently of Kafka's internal state mechanisms, ensuring consistency even during failover.
+
+#### Example Implementation
+
+Here's how you can implement this hybrid approach using Kafka Streams for processing and Redis as an external state store for deduplication.
+
+#### Step 1: Setup Kafka Streams Application
+
+**KafkaStreamsApp.java**
+
+```java
+import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.kstream.KStream;
+
+import java.util.Properties;
+
+public class KafkaStreamsApp {
+
+    public static void main(String[] args) {
+        Properties props = new Properties();
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "deduplication-streams-app");
+        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+        props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+        props.put(StreamsConfig.STATE_DIR_CONFIG, "/tmp/kafka-streams");
+        props.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, StreamsConfig.EXACTLY_ONCE_V2);
+
+        StreamsBuilder builder = new StreamsBuilder();
+        KStream<String, String> stream = builder.stream("input-topic");
+
+        // Apply custom processing logic for deduplication using external state store
+        stream.process(() -> new DeduplicationProcessor(), "state-store");
+
+        KafkaStreams streams = new KafkaStreams(builder.build(), props);
+        streams.start();
+
+        // Shutdown hook to properly close the streams application
+        Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
+    }
+}
+```
+
+#### Step 2: Implement Deduplication Processor with Redis
+
+**DeduplicationProcessor.java**
+
+```java
+import org.apache.kafka.streams.processor.AbstractProcessor;
+import org.apache.kafka.streams.processor.ProcessorContext;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+
+public class DeduplicationProcessor extends AbstractProcessor<String, String> {
+
+    private JedisPool jedisPool;
+
+    @Override
+    public void init(ProcessorContext context) {
+        super.init(context);
+        // Initialize Redis connection pool
+        jedisPool = new JedisPool("localhost", 6379);
+    }
+
+    @Override
+    public void process(String key, String value) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            if (!jedis.exists(key)) {
+                jedis.set(key, "processed");
+                // Forward the record to the next processor or sink
+                context().forward(key, value);
+            } else {
+                // Duplicate detected, do not forward
+            }
+        }
+    }
+
+    @Override
+    public void close() {
+        if (jedisPool != null) {
+            jedisPool.close();
+        }
+    }
+}
+```
+
+### Key Considerations
+
+1. **State Management**:
+   - **RocksDB**: Used for local, fast state management within Kafka Streams. Handles stateful operations and provides fast access to state data.
+   - **Redis**: Used as an external, centralized state store to ensure robust deduplication across potential synchronization gaps between active and passive Kafka clusters.
+
+2. **State Consistency**:
+   - **RocksDB**: State is persisted locally and backed up via changelog topics, but synchronization delays can cause issues during failover.
+   - **Redis**: External state store helps maintain deduplication state consistently, independent of Kafka's internal mechanisms.
+
+3. **Failover Handling**:
+   - During failover, Redis provides a consistent view of processed message IDs, ensuring that duplicates are detected and handled correctly.
+   - Kafka Streams can recover its state from the changelog topics, while Redis ensures that deduplication is accurate.
+
+### Benefits
+
+- **Enhanced Deduplication**: Combining Kafka Streams with an external state store like Redis provides a more robust deduplication mechanism.
+- **Resilience**: External state store remains unaffected by Kafka cluster synchronization issues, ensuring consistent deduplication.
+- **Scalability**: Redis can handle high throughput and large volumes of deduplication data, making it suitable for scalable applications.
+
+### Summary
+
+Using Kafka Streams with an external state store (such as Redis) for deduplication provides a robust solution to address the challenges posed by synchronization delays in an active-passive Kafka cluster architecture. This hybrid approach leverages the strengths of both Kafka Streams and an external state store to ensure accurate and consistent deduplication, even during failover scenarios.
