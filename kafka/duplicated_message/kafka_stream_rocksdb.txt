@@ -1,0 +1,44 @@
++-------------------+
+| Kafka Broker 1    |
+|                   |
+|                   |
++-------------------+
+| Kafka Broker 2    |
+|                   |
+|                   |
++-------------------+
+| Kafka Broker 3    |
+|                   |
+|                   |
++-------------------+
+
+      Kafka Cluster
+
++-----------------------+         +-----------------------+
+| Kafka Streams App 1   |         | Kafka Streams App 2   |
+|                       |         |                       |
+|  +-----------------+  |         |  +-----------------+  |
+|  |  RocksDB State  |  |         |  |  RocksDB State  |  |
+|  |      Store      |  |         |  |      Store      |  |
+|  +-----------------+  |         |  +-----------------+  |
++-----------------------+         +-----------------------+
+
+-------------------------------------------------------------------------
+Kafka Stream application detects Kafka broker status, if broker is down,
+stream application retry and wait, and notify listner to handle error.
+
+streams.setStateListener((newState, oldState) -> {
+    if (newState == KafkaStreams.State.ERROR) {
+        System.err.println("Kafka Streams entered ERROR state. Attempting to restart...");
+        streams.close();
+
+        // Implement a backoff strategy
+        try {
+            TimeUnit.SECONDS.sleep(30); // Wait for 30 seconds before restarting
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        streams.start();
+    }
+});
