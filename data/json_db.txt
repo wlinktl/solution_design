@@ -1,0 +1,34 @@
+When considering whether to store JSON payloads directly in a database or to map the fields to columns of database tables, there are a few key factors to take into account:
+
+### Storing JSON Directly
+1. **Flexibility**: Storing JSON directly in a database (like a JSONB column in PostgreSQL or a similar feature in other databases) provides flexibility. This is useful if the structure of the JSON data might change frequently or if there are many optional fields that are not always present.
+2. **Simplicity**: It can be simpler to insert and retrieve JSON objects without needing to map each field to a specific column.
+3. **Query Performance**: Modern databases with JSON support offer ways to index and query JSON data efficiently. However, this might not be as performant as querying structured data with proper indexes on columns.
+4. **Schema Evolution**: It simplifies schema evolution since you don’t need to alter the table schema every time the JSON structure changes.
+
+### Mapping JSON Fields to Columns
+1. **Performance**: Querying specific fields can be faster if they are stored in separate columns, especially if these fields are indexed.
+2. **Data Integrity**: Enforcing data types and constraints at the column level can help maintain data integrity.
+3. **Ease of Use**: For certain operations like reporting, analytics, or complex queries, having data in columns can be more convenient and performant.
+4. **Tool Compatibility**: Many tools (e.g., BI tools, ORM frameworks) work better with structured data.
+
+### Hybrid Approach
+You might consider a hybrid approach:
+- **Critical Fields in Columns**: Store frequently accessed or critical fields as columns for performance and ease of querying.
+- **Less Critical Fields in JSON**: Store less critical or infrequently accessed fields as JSON.
+
+### Decision Criteria
+1. **Use Case Requirements**: Analyze the specific requirements of your use case, including the frequency and type of queries.
+2. **Scalability**: Consider how the choice will scale with increasing data volume and query complexity.
+3. **Flexibility vs. Performance Trade-off**: Balance the need for flexibility (e.g., handling dynamic fields) against the need for performance (e.g., efficient querying).
+
+Given these considerations, a typical approach in event-driven systems where the structure of the messages might evolve is to store the JSON payload directly, especially if the JSON contains a mix of mandatory and optional fields. However, if performance and frequent querying of specific fields are critical, mapping essential fields to columns could be advantageous.
+
+### Example
+For a JSON payload with fields like `source`, `target`, `action_name`, `action_arguments`, you could:
+- Store `source`, `target`, and `action_name` as separate columns if these are frequently queried.
+- Store `action_arguments` as a JSON column if its structure can vary or contains many optional fields.
+
+This way, you get the best of both worlds: optimized querying for critical fields and flexibility for evolving data structures.
+
+By carefully analyzing your specific needs and considering the trade-offs, you can choose the most appropriate approach for your system.
