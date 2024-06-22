@@ -1,0 +1,93 @@
+Certainly! Below are the complete steps to install Azurite and create a Java application to access the local Azurite blob storage, create a blob container, and upload files into it.
+
+### Step 1: Install Azurite
+
+1. **Install Node.js**: Make sure Node.js is installed on your machine. You can download it from [Node.js official website](https://nodejs.org/).
+
+2. **Install Azurite**: Open your terminal or command prompt and run the following command to install Azurite globally using npm:
+
+    ```bash
+    npm install -g azurite
+    ```
+
+### Step 2: Start Azurite
+
+1. **Start Azurite**: Run the following command to start Azurite:
+
+    ```bash
+    azurite
+    ```
+
+    By default, Azurite will listen on:
+    - Blob service: `http://127.0.0.1:10000`
+    - Queue service: `http://127.0.0.1:10001`
+    - Table service: `http://127.0.0.1:10002`
+
+### Step 3: Set Up Java Project
+
+1. **Add Maven Dependency**: Add the Azure Storage Blob SDK dependency to your `pom.xml` file if you are using Maven:
+
+    ```xml
+    <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-storage-blob</artifactId>
+        <version>12.14.2</version>
+    </dependency>
+    ```
+
+### Step 4: Java Code to Connect to Azurite and Upload Files
+
+1. **Create Java Class**: Create a new Java class, for example `AzuriteExample.java`, and add the following code:
+
+    ```java
+    import com.azure.storage.blob.BlobContainerClient;
+    import com.azure.storage.blob.BlobContainerClientBuilder;
+    import com.azure.storage.blob.BlobServiceClient;
+    import com.azure.storage.blob.BlobServiceClientBuilder;
+    import com.azure.storage.blob.specialized.BlockBlobClient;
+
+    public class AzuriteExample {
+        private static final String CONNECTION_STRING = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;" +
+                "AccountKey=Eby8vdM02xNOcqFeq2+bgb7M3gR2Jw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
+
+        public static void main(String[] args) {
+            // Create a BlobServiceClient object
+            BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
+                    .connectionString(CONNECTION_STRING)
+                    .buildClient();
+
+            // Create a BlobContainerClient object
+            BlobContainerClient containerClient = blobServiceClient.createBlobContainerIfNotExists("mycontainer");
+
+            // Upload a file
+            String blobContent = "Hello, World!";
+            BlockBlobClient blobClient = containerClient.getBlobClient("hello.txt").getBlockBlobClient();
+            blobClient.uploadFromFile(blobContent.getBytes(), blobContent.length());
+
+            System.out.println("Blob uploaded successfully");
+
+            // Optionally, upload more files
+            uploadFile(containerClient, "example1.txt", "This is example 1.");
+            uploadFile(containerClient, "example2.txt", "This is example 2.");
+        }
+
+        private static void uploadFile(BlobContainerClient containerClient, String blobName, String content) {
+            BlockBlobClient blobClient = containerClient.getBlobClient(blobName).getBlockBlobClient();
+            blobClient.uploadFromFile(content.getBytes(), content.length());
+            System.out.println("Uploaded " + blobName);
+        }
+    }
+    ```
+
+### Step 5: Run the Java Code
+
+1. **Start Azurite**: Make sure Azurite is running by executing the `azurite` command in your terminal.
+
+2. **Compile and Run the Java Program**: Use your IDE or run the following commands from the terminal to compile and execute your Java program:
+
+    ```bash
+    javac AzuriteExample.java
+    java AzuriteExample
+    ```
+
+By following these steps, you will set up Azurite for local Azure Storage development and create a Java application to connect to Azurite, create a blob container, and upload files into it.
