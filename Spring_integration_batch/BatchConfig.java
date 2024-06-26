@@ -1,55 +1,54 @@
-import com.azure.storage.blob.BlobClientBuilder;
-import com.azure.storage.blob.BlobContainerClient;
-import com.azure.storage.blob.BlobContainerClientBuilder;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
-import org.springframework.batch.integration.async.AsyncItemProcessor;
-import org.springframework.batch.integration.async.AsyncItemWriter;
+import org.springframework.batch.integration.launch.JobLaunchRequest;
+import org.springframework.batch.integration.launch.JobLaunchingMessageHandler;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
-import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.mapping.PassThroughLineMapper;
-import org.springframework.batch.item.kafka.KafkaItemReader;
-import org.springframework.batch.item.kafka.builder.KafkaItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.kafka.core.*;
-import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import org.springframework.kafka.listener.config.ContainerProperties;
-import org.springframework.kafka.listener.MessageListenerContainer;
-import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
-import org.springframework.kafka.support.serializer.ErrorHandlingSerializer;
-import org.springframework.kafka.support.serializer.StringDeserializer;
-import org.springframework.kafka.support.serializer.StringSerializer;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.IntegrationFlows;
+import org.springframework.integration.file.dsl.Files;
+import org.springframework.integration.file.filters.CompositeFileListFilter;
+import org.springframework.integration.file.filters.SftpPersistentAcceptOnceFileListFilter;
+import org.springframework.integration.file.remote.session.DefaultSftpSessionFactory;
+import org.springframework.integration.file.remote.synchronizer.InboundFileSynchronizer;
+import org.springframework.integration.file.remote.synchronizer.SftpInboundFileSynchronizer;
+import org.springframework.integration.file.remote.synchronizer.SftpInboundFileSynchronizingMessageSource;
+import org.springframework.integration.metadata.SimpleMetadataStore;
+import org.springframework.integration.scheduling.PollerMetadata;
+import org.springframework.integration.support.MessageBuilder;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.scheduling.support.PeriodicTrigger;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Future;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 @EnableBatchProcessing
 public class BatchConfig {
 
-    @Value("${sftp.remote.directory}")
-    private String remoteDirectory;
+    @Autowired
+    private JobBuilderFactory jobBuilderFactory;
 
-    @Value("${local.directory}")
-    private String localDirectory;
+    @Autowired
+    private StepBuilderFactory stepBuilderFactory;
+
+    @Autowired
+    private JobLauncher jobLauncher;
 
     @Value("${azure.storage.connection-string}")
     private String azureConnectionString;
@@ -69,25 +68,14 @@ public class BatchConfig {
     @Value("${rest.endpoint.url}")
     private String restEndpointUrl;
 
-    @Autowired
-    private JobBuilderFactory jobBuilderFactory;
-
-    @Autowired
-    private StepBuilderFactory stepBuilderFactory;
-
-    @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
-
-    @Autowired
-    private ConsumerFactory<String, String> consumerFactory;
-
     @Bean
-    public Job job() {
-        return jobBuilderFactory.get("job")
+    public Job processJob() {
+        return jobBuilderFactory.get("processJob")
                 .incrementer(new RunIdIncrementer())
                 .start(step1())
                 .next(step2())
                 .next(step3())
+                .next(step4())
                 .build();
     }
 
@@ -96,8 +84,8 @@ public class BatchConfig {
         return stepBuilderFactory.get("step1")
                 .<String, String>chunk(10)
                 .reader(fileReader())
-                .processor(asyncItemProcessor1())
-                .writer(asyncItemWriter1())
+                .processor(fileProcessor())
+                .writer(azureWriter())
                 .build();
     }
 
@@ -105,9 +93,9 @@ public class BatchConfig {
     public Step step2() {
         return stepBuilderFactory.get("step2")
                 .<String, String>chunk(10)
-                .reader(azureItemReader())
-                .processor(asyncItemProcessor2())
-                .writer(asyncItemWriter2())
+                .reader(azureFileReader())
+                .processor(kafkaMessageProcessor())
+                .writer(kafkaMessageWriter())
                 .build();
     }
 
@@ -115,32 +103,80 @@ public class BatchConfig {
     public Step step3() {
         return stepBuilderFactory.get("step3")
                 .<String, String>chunk(10)
-                .reader(kafkaItemReader())
-                .processor(asyncItemProcessor3())
-                .writer(asyncItemWriter3())
+                .reader(kafkaMessageReader())
+                .processor(restProcessor())
+                .writer(restMessageWriter())
+                .build();
+    }
+
+    @Bean
+    public Step step4() {
+        return stepBuilderFactory.get("step4")
+                .<String, String>chunk(10)
+                .reader(kafkaMessageReader())
+                .processor(kafkaOutputProcessor())
+                .writer(kafkaOutputWriter())
                 .build();
     }
 
     @Bean
     public FlatFileItemReader<String> fileReader() {
         FlatFileItemReader<String> reader = new FlatFileItemReader<>();
-        reader.setResource(new FileSystemResource(localDirectory));
+        reader.setResource(new FileSystemResource("local-directory/input-file.csv"));
         reader.setLineMapper(new PassThroughLineMapper());
         return reader;
     }
 
     @Bean
-    public ItemReader<String> azureItemReader() {
+    public ItemProcessor<String, String> fileProcessor() {
+        return item -> item; // No processing needed, just read and write
+    }
+
+    @Bean
+    public ItemWriter<String> azureWriter() {
+        return items -> {
+            BlobClientBuilder blobClientBuilder = new BlobClientBuilder().connectionString(azureConnectionString);
+            for (String item : items) {
+                byte[] bytes = item.getBytes(StandardCharsets.UTF_8);
+                blobClientBuilder.blobName("input-file").buildClient().upload(new ByteArrayInputStream(bytes), bytes.length, true);
+            }
+        };
+    }
+
+    @Bean
+    public ItemReader<String> azureFileReader() {
         return () -> {
-            BlobContainerClient containerClient = blobContainerClient();
+            BlobContainerClient containerClient = new BlobContainerClientBuilder()
+                    .connectionString(azureConnectionString)
+                    .containerName(containerName)
+                    .buildClient();
             return new String(containerClient.getBlobClient("input-file").downloadContent().toBytes());
         };
     }
 
     @Bean
-    public KafkaItemReader<String, String> kafkaItemReader() {
+    public ItemProcessor<String, String> kafkaMessageProcessor() {
+        return item -> item; // Process if needed
+    }
+
+    @Bean
+    public ItemWriter<String> kafkaMessageWriter() {
+        return items -> items.forEach(item -> {
+            KafkaTemplate<String, String> kafkaTemplate = kafkaTemplate();
+            kafkaTemplate.send(inputTopic, item);
+        });
+    }
+
+    @Bean
+    public KafkaItemReader<String, String> kafkaMessageReader() {
+        Map<String, Object> consumerProps = new HashMap<>();
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "group_id");
+        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+
         return new KafkaItemReaderBuilder<String, String>()
-                .consumerFactory(consumerFactory)
+                .consumerFactory(new DefaultKafkaConsumerFactory<>(consumerProps))
                 .partitions(0)
                 .pollTimeout(3000)
                 .saveState(true)
@@ -150,106 +186,42 @@ public class BatchConfig {
     }
 
     @Bean
-    public AsyncItemProcessor<String, String> asyncItemProcessor1() {
-        AsyncItemProcessor<String, String> asyncItemProcessor = new AsyncItemProcessor<>();
-        asyncItemProcessor.setDelegate(processor1());
-        asyncItemProcessor.setTaskExecutor(taskExecutor());
-        return asyncItemProcessor;
-    }
-
-    @Bean
-    public AsyncItemWriter<String> asyncItemWriter1() {
-        AsyncItemWriter<String> asyncItemWriter = new AsyncItemWriter<>();
-        asyncItemWriter.setDelegate(azureItemWriter());
-        return asyncItemWriter;
-    }
-
-    @Bean
-    public AsyncItemProcessor<String, String> asyncItemProcessor2() {
-        AsyncItemProcessor<String, String> asyncItemProcessor = new AsyncItemProcessor<>();
-        asyncItemProcessor.setDelegate(processor2());
-        asyncItemProcessor.setTaskExecutor(taskExecutor());
-        return asyncItemProcessor;
-    }
-
-    @Bean
-    public AsyncItemWriter<String> asyncItemWriter2() {
-        AsyncItemWriter<String> asyncItemWriter = new AsyncItemWriter<>();
-        asyncItemWriter.setDelegate(kafkaItemWriter());
-        return asyncItemWriter;
-    }
-
-    @Bean
-    public AsyncItemProcessor<String, String> asyncItemProcessor3() {
-        AsyncItemProcessor<String, String> asyncItemProcessor = new AsyncItemProcessor<>();
-        asyncItemProcessor.setDelegate(processor3());
-        asyncItemProcessor.setTaskExecutor(taskExecutor());
-        return asyncItemProcessor;
-    }
-
-    @Bean
-    public AsyncItemWriter<String> asyncItemWriter3() {
-        AsyncItemWriter<String> asyncItemWriter = new AsyncItemWriter<>();
-        asyncItemWriter.setDelegate(kafkaItemWriter());
-        return asyncItemWriter;
-    }
-
-    @Bean
-    public ItemProcessor<String, String> processor1() {
-        return item -> {
-            byte[] bytes = item.getBytes(StandardCharsets.UTF_8);
-            blobClientBuilder().blobName("input-file").buildClient().upload(new ByteArrayInputStream(bytes), bytes.length, true);
-            return item;
-        };
-    }
-
-    @Bean
-    public ItemProcessor<String, String> processor2() {
-        return item -> item; // No processing needed for this step
-    }
-
-    @Bean
-    public ItemProcessor<String, String> processor3() {
+    public ItemProcessor<String, String> restProcessor() {
         return item -> {
             RestTemplate restTemplate = new RestTemplate();
-            String response = restTemplate.exchange(restEndpointUrl, HttpMethod.POST, null, String.class, item).getBody();
-            return response;
+            return restTemplate.postForObject(restEndpointUrl, item, String.class);
         };
     }
 
     @Bean
-    public ItemWriter<String> azureItemWriter() {
-        return items -> {
-            for (String item : items) {
-                byte[] bytes = item.getBytes(StandardCharsets.UTF_8);
-                blobClientBuilder().blobName("input-file").buildClient().upload(new ByteArrayInputStream(bytes), bytes.length, true);
-            }
-        };
+    public ItemWriter<String> restMessageWriter() {
+        return items -> items.forEach(item -> {
+            KafkaTemplate<String, String> kafkaTemplate = kafkaTemplate();
+            kafkaTemplate.send(outputTopic, item);
+        });
     }
 
     @Bean
-    public ItemWriter<String> kafkaItemWriter() {
-        return items -> items.forEach(item -> kafkaTemplate.send(outputTopic, item));
+    public ItemProcessor<String, String> kafkaOutputProcessor() {
+        return item -> item; // Process if needed
     }
 
     @Bean
-    public BlobContainerClient blobContainerClient() {
-        return new BlobContainerClientBuilder()
-                .connectionString(azureConnectionString)
-                .containerName(containerName)
-                .buildClient();
+    public ItemWriter<String> kafkaOutputWriter() {
+        return items -> items.forEach(item -> {
+            KafkaTemplate<String, String> kafkaTemplate = kafkaTemplate();
+            kafkaTemplate.send(outputTopic, item);
+        });
     }
 
     @Bean
-    public BlobClientBuilder blobClientBuilder() {
-        return new BlobClientBuilder()
-                .connectionString(azureConnectionString);
-    }
+    public KafkaTemplate<String, String> kafkaTemplate() {
+        Map<String, Object> producerProps = new HashMap<>();
+        producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
-    @Bean
-    public TaskExecutor taskExecutor() {
-        SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("batch_processor");
-        executor.setConcurrencyLimit(10);
-        return executor;
+        ProducerFactory<String, String> producerFactory = new DefaultKafkaProducerFactory<>(producerProps);
+        return new KafkaTemplate<>(producerFactory);
     }
 }
