@@ -24,4 +24,4 @@ Use Spring Integration if:
 
 You need real-time, event-driven processing.
 Your workflow involves asynchronous communication between components.
-You require modular and flexible integration
+You require modular and flexible integration 

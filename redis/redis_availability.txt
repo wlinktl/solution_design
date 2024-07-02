@@ -1,0 +1,26 @@
+Redis deployment configurations: Redis Active-Active, Redis Cluster, and Redis Replication. 
+
+### Redis Active-Active
+Redis Active-Active (also known as Redis Enterprise Active-Active) is designed for high availability and disaster recovery across multiple geographic locations.
+
+- **Availability Percentage**: Typically, Redis Active-Active can achieve availability percentages of 99.999% (five nines).
+- **Reasoning**: This high availability is due to the ability to distribute the database across multiple data centers or regions. In the event of a failure in one region, the other regions can continue to serve the application without interruption.
+
+### Redis Cluster
+Redis Cluster is designed to provide horizontal scalability and high availability. It distributes data across multiple nodes using sharding and provides automatic failover in case of node failures.
+
+- **Availability Percentage**: Redis Cluster can typically achieve availability percentages of 99.99% (four nines).
+- **Reasoning**: Redis Cluster ensures high availability by having multiple replicas for each shard and automatic failover mechanisms. In case of a node failure, the cluster can promote a replica to replace the failed node, ensuring minimal downtime.
+
+### Redis Replication
+Redis Replication involves a master-slave configuration where the master node handles write operations and replicates data to one or more slave nodes.
+
+- **Availability Percentage**: Redis Replication can typically achieve availability percentages of 99.9% (three nines).
+- **Reasoning**: High availability is provided by having slave nodes that can take over if the master node fails. However, manual intervention or external tools are often needed to handle failover, which can lead to longer recovery times compared to Redis Cluster or Active-Active setups.
+
+### Summary
+- **Redis Active-Active**: 99.999% (five nines) availability, designed for multi-region deployment and disaster recovery.
+- **Redis Cluster**: 99.99% (four nines) availability, providing horizontal scalability and automatic failover.
+- **Redis Replication**: 99.9% (three nines) availability, offering redundancy with master-slave replication but often requiring manual failover.
+
+These availability percentages are theoretical maximums based on ideal configurations and best practices. Actual availability can vary based on factors such as network reliability, hardware quality, and operational procedures.
